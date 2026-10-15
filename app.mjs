@@ -1,4 +1,4 @@
-import {TABLE,templates,reserve,defaultState,analyze,moveItem,rotateItem,addItem,removeItem,updateItem,number,validateState,saveState,loadState} from './core.mjs';
+import {tableSize,resizeTable,workAreaSize,templates,defaultState,analyze,moveItem,rotateItem,addItem,removeItem,updateItem,number,validateState,saveState,loadState} from './core.mjs';
 const $=id=>document.getElementById(id);
 const escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=n=>Number(n).toLocaleString('de-DE',{maximumFractionDigits:1});
@@ -8,7 +8,19 @@ let selected='rack-v',drag=null,toastTimer;
 const icon=kind=>kind==='case'?'▱':kind==='custom'?'▧':'▤';
 function notify(message){$('toast').textContent=message;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').hidden=true,4500);}
 function persist(){try{saveState(localStorage,state);$('saveStatus').textContent='Im Browser gespeichert';}catch{$('saveStatus').textContent='Speichern nicht möglich · bitte exportieren';}}
-function positionElement(el,i){el.style.left=`${i.x/TABLE.w*100}%`;el.style.top=`${i.y/TABLE.d*100}%`;el.style.width=`${i.w/TABLE.w*100}%`;el.style.height=`${i.d/TABLE.d*100}%`;}
+function positionElement(el,i){const table=tableSize(state);el.style.left=`${i.x/table.w*100}%`;el.style.top=`${i.y/table.d*100}%`;el.style.width=`${i.w/table.w*100}%`;el.style.height=`${i.d/table.d*100}%`;}
+function renderTable(){
+  const table=tableSize(state),workArea=workAreaSize(state);
+  $('tableWidth').value=table.w;$('tableDepth').value=table.d;
+  $('board').style.aspectRatio=`${table.w} / ${table.d}`;
+  $('board').style.backgroundSize=`${500/table.w}% ${500/table.d}%`;
+  $('board').setAttribute('aria-label',`${fmt(table.w)} mal ${fmt(table.d)} Zentimeter Tischfläche`);
+  $('boardWrap').style.maxWidth=`calc(${440*table.w/table.d}px + var(--ruler-space))`;
+  $('rulerTop').innerHTML=Array.from({length:7},(_,n)=>`<span>${fmt(table.w*n/6)}${n===6?' cm':''}</span>`).join('');
+  $('rulerSide').innerHTML=Array.from({length:4},(_,n)=>`<span>${fmt(table.d*n/3)}</span>`).join('');
+  positionElement($('workArea'),workArea);
+  $('workSize').textContent=`${fmt(workArea.w)} × ${fmt(workArea.d)} cm Arbeitsfläche`;
+}
 function renderBoard(a){
   $('workArea').hidden=!state.workArea;
   const conflictIds=new Set([...a.collisions.flat(),...a.outside,...a.blocked]);
@@ -19,7 +31,7 @@ function renderInspector(){
   const i=state.items.find(i=>i.id===selected);
   if(!i){$('inspector').innerHTML='<div class="empty-inspector"><span aria-hidden="true">↖</span><h2>Dein Element im Detail</h2><p>Wähle ein Element auf dem Tisch oder in der Vergleichsliste.</p></div>';return;}
   const field=(key,label,max,min=0)=>`<label>${label}<input type="number" data-field="${key}" value="${i[key]}" min="${min}" max="${max}" step="${key.startsWith('cap')?1:.5}"></label>`;
-  $('inspector').innerHTML=`<div class="inspector-heading"><span class="inspector-icon" aria-hidden="true">${icon(i.kind)}</span><div><h2>Element bearbeiten</h2><span>Maße & Plätze anpassen</span></div></div><label>Name<input type="text" data-field="name" value="${escape(i.name)}" maxlength="60"></label><div class="field-grid">${field('w','Breite',180,1)}${field('d','Tiefe',180,1)}${field('h','Höhe',150,1)}</div><div class="field-grid two">${field('x','Von links',180)}${field('y','Von hinten',90)}</div><p class="divider-label">KAPAZITÄT · FESTE PLÄTZE</p><div class="field-grid two">${field('capV','Vallejo',2000)}${field('capC','Citadel',2000)}</div><p class="inspector-help">Stellfläche inklusive benötigter Öffnungsfläche angeben. Höhe mit der Dachschräge abgleichen; sie wird im Plan nicht geprüft.</p><div class="inspector-actions"><button class="button" data-action="rotate">↻ Um 90° drehen</button><button class="delete" data-action="delete" aria-label="${escape(i.name)} entfernen" title="Element entfernen">×</button></div><p class="shortcut">Pfeile: verschieben · R: drehen · Entf: entfernen</p>`;
+  $('inspector').innerHTML=`<div class="inspector-heading"><span class="inspector-icon" aria-hidden="true">${icon(i.kind)}</span><div><h2>Element bearbeiten</h2><span>Maße & Plätze anpassen</span></div></div><label>Name<input type="text" data-field="name" value="${escape(i.name)}" maxlength="60"></label><div class="field-grid">${field('w','Breite',400,1)}${field('d','Tiefe',400,1)}${field('h','Höhe',150,1)}</div><div class="field-grid two">${field('x','Von links',400)}${field('y','Von hinten',400)}</div><p class="divider-label">KAPAZITÄT · FESTE PLÄTZE</p><div class="field-grid two">${field('capV','Vallejo',2000)}${field('capC','Citadel',2000)}</div><p class="inspector-help">Stellfläche inklusive benötigter Öffnungsfläche angeben. Höhe mit der Dachschräge abgleichen; sie wird im Plan nicht geprüft.</p><div class="inspector-actions"><button class="button" data-action="rotate">↻ Um 90° drehen</button><button class="delete" data-action="delete" aria-label="${escape(i.name)} entfernen" title="Element entfernen">×</button></div><p class="shortcut">Pfeile: verschieben · R: drehen · Entf: entfernen</p>`;
 }
 function renderResults(a){
   const issues=[];
@@ -32,7 +44,8 @@ function renderResults(a){
   $('result').innerHTML=`<span class="result-icon" aria-hidden="true">${a.allFits?'✓':'!'}</span><div><strong>${a.allFits?'Deine Farben passen. Und deine Ideen auch.':'Hier braucht dein Plan noch etwas Platz.'}</strong><p>${a.allFits?`${fmt(a.demandV)} Vallejo-Flaschen und ${fmt(a.demandC)} Citadel-Töpfe haben Platz. ${state.workArea?'Die Arbeitsfläche bleibt frei.':'Die Elemente überlappen sich nicht.'} Auf Basis deiner eingetragenen Werte.`:issues.join(' · ')+'.'}</p></div>`;
   $('summaryV').textContent=`${fmt(a.demandV)} / ${fmt(a.capacityV)} Plätze`;
   $('summaryC').textContent=`${fmt(a.demandC)} / ${fmt(a.capacityC)} Plätze`;
-  $('summaryFree').textContent=`${Math.round(a.free/(TABLE.w*TABLE.d)*100)} %`;
+  const table=tableSize(state);
+  $('summaryFree').textContent=`${Math.round(a.free/(table.w*table.d)*100)} %`;
   const row=(label,demand,capacity,cls)=>`<div class="capacity-row ${cls} ${demand>capacity?'over':''}"><div class="capacity-row-head"><span>${label}</span><strong>${fmt(demand)} / ${fmt(capacity)} Plätze</strong></div><div class="bar" role="meter" aria-label="${label} belegte Plätze" aria-valuemin="0" aria-valuemax="${Math.max(capacity,demand,1)}" aria-valuenow="${demand}"><span style="width:${capacity?Math.min(100,demand/capacity*100):demand?100:0}%"></span></div><p>${demand<=capacity?`${fmt(capacity-demand)} Plätze Reserve`:`Noch ${fmt(demand-capacity)} Plätze nötig`}</p></div>`;
   $('capacityContent').innerHTML=row('Vallejo',a.demandV,a.capacityV,'vallejo')+row('Citadel',a.demandC,a.capacityC,'citadel');
 }
@@ -40,12 +53,13 @@ function renderComparison(){
   $('elementCount').textContent=`${state.items.length} Elemente`;
   $('comparisonBody').innerHTML=state.items.map(i=>`<tr class="${selected===i.id?'active':''}" data-select="${escape(i.id)}"><td><span class="swatch" style="background:${i.kind==='case'?'#c3b37c':i.kind==='citadel'?'#c58d84':i.kind==='custom'?'#9caac2':'#77a591'}"></span>${escape(i.name)}</td><td>${fmt(i.w)} × ${fmt(i.d)} × ${fmt(i.h)}</td><td>${fmt(i.capV)}</td><td>${fmt(i.capC)}</td><td><button class="table-edit" data-select="${escape(i.id)}" aria-label="${escape(i.name)} bearbeiten">↗</button></td></tr>`).join('')||'<tr><td colspan="5">Noch kein Element. Füge einen Baustein hinzu.</td></tr>';
 }
-function render({save=true,inspector=true}={}){const a=analyze(state);renderBoard(a);renderComparison();renderResults(a);if(inspector)renderInspector();$('snap').checked=state.snap;$('workToggle').checked=state.workArea;for(const k of Object.keys(state.inventory))$('inv-'+k).value=state.inventory[k];if(save)persist();}
+function render({save=true,inspector=true}={}){const a=analyze(state);renderTable();renderBoard(a);renderComparison();renderResults(a);if(inspector)renderInspector();$('snap').checked=state.snap;$('workToggle').checked=state.workArea;for(const k of Object.keys(state.inventory))$('inv-'+k).value=state.inventory[k];if(save)persist();}
 function select(id){selected=id;render({save:false});}
 $('catalog').innerHTML=Object.entries(templates).map(([key,t])=>`<button class="catalog-button ${key}" data-add="${key}"><span class="catalog-icon" aria-hidden="true">${icon(t.kind)}</span><span><strong>${t.name}</strong><small>${t.w} × ${t.d} cm · ${t.capV||t.capC?`${t.capV||t.capC} Plätze`:'frei anpassbar'}</small></span><span class="catalog-plus" aria-hidden="true">＋</span></button>`).join('');
 $('catalog').addEventListener('click',e=>{const b=e.target.closest('[data-add]');if(!b)return;if(state.items.length>=100){notify('Maximal 100 Elemente pro Plan.');return;}const i=addItem(state,b.dataset.add,crypto.randomUUID());selected=i.id;render();notify(`${i.name} hinzugefügt.`);});
 document.querySelectorAll('[data-inventory]').forEach(input=>input.addEventListener('change',()=>{state.inventory[input.dataset.inventory]=Math.floor(number(input.value,0,2000));render();}));
 $('snap').addEventListener('change',e=>{state.snap=e.target.checked;persist();});
+$('tableForm').addEventListener('submit',e=>{e.preventDefault();drag=null;resizeTable(state,$('tableWidth').value,$('tableDepth').value);render();notify(`Tischmaße ${fmt(state.table.w)} × ${fmt(state.table.d)} cm übernommen.`);});
 $('workToggle').addEventListener('change',e=>{state.workArea=e.target.checked;render();});
 $('comparisonBody').addEventListener('click',e=>{const row=e.target.closest('[data-select]');if(row)select(row.dataset.select);});
 $('inspector').addEventListener('change',e=>{const input=e.target.closest('[data-field]');if(input){updateItem(state,selected,input.dataset.field,input.value);render();}});
@@ -54,7 +68,8 @@ $('inspector').addEventListener('click',e=>{const b=e.target.closest('[data-acti
 $('board').addEventListener('pointerdown',e=>{
   if(e.button!==0)return;const el=e.target.closest('[data-element]');if(!el){selected=null;render({save:false});return;}
   e.preventDefault();selected=el.dataset.element;const i=state.items.find(i=>i.id===selected),rect=$('board').getBoundingClientRect();
-  drag={id:selected,pointerId:e.pointerId,startX:e.clientX,startY:e.clientY,itemX:i.x,itemY:i.y,scaleX:TABLE.w/rect.width,scaleY:TABLE.d/rect.height};
+  const table=tableSize(state);
+  drag={id:selected,pointerId:e.pointerId,startX:e.clientX,startY:e.clientY,itemX:i.x,itemY:i.y,scaleX:table.w/rect.width,scaleY:table.d/rect.height};
   render({save:false});$('board').setPointerCapture(e.pointerId);$('elements').querySelectorAll('[data-element]').forEach(n=>{if(n.dataset.element===selected)n.classList.add('dragging');});
 });
 $('board').addEventListener('pointermove',e=>{
@@ -76,6 +91,7 @@ document.addEventListener('keydown',e=>{
 $('export').addEventListener('click',()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='farbwerk-tischplan.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);notify('Dein Plan wurde exportiert.');});
 $('import').addEventListener('click',()=>$('importFile').click());
 $('importFile').addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>150000)throw new Error('Die Datei ist zu groß.');const imported=validateState(JSON.parse(await file.text()));state=imported;selected=state.items[0]?.id??null;render();notify('Dein Plan wurde geladen.');}catch(err){notify(err instanceof SyntaxError?'Die Datei enthält keinen gültigen Plan.':err.message);}e.target.value='';});
-$('reset').addEventListener('click',()=>{if(!confirm('Beispielplan wiederherstellen? Dein aktueller Plan wird ersetzt. Du kannst ihn vorher exportieren.'))return;state=defaultState();selected='rack-v';render();notify('Beispielplan wiederhergestellt.');});
+$('reset').addEventListener('click',()=>{if(!confirm('Beispielplan mit 180 × 90 cm Tisch wiederherstellen? Dein aktueller Plan wird ersetzt. Du kannst ihn vorher exportieren.'))return;state=defaultState();selected='rack-v';render();notify('Beispielplan wiederhergestellt.');});
 render({save:!loadFailed});
 if(loadFailed){$('saveStatus').textContent='Gespeicherten Plan nicht lesbar';notify('Der gespeicherte Plan konnte nicht geladen werden. Der Beispielplan ist geöffnet.');}
+

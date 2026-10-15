@@ -1,6 +1,6 @@
 # Farbwerk · Mein Tischplaner
 
-Interaktiver Aufbewahrungsplaner für einen **180 × 90 cm Basteltisch**: zwei Vallejo-Koffer, weitere Vallejo-Flaschen und Citadel-Töpfe.
+Interaktiver Aufbewahrungsplaner für einen **Basteltisch mit anpassbarer Größe** (Startmaß: 180 × 90 cm): zwei Vallejo-Koffer, weitere Vallejo-Flaschen und Citadel-Töpfe.
 
 **Direkt im Browser öffnen — ohne Installation:** https://toxodia.github.io/farbwerk-tischplaner/
 
@@ -18,7 +18,9 @@ Mit `Strg+C` wird der lokale Server beendet. Die HTML-Datei bitte über den Serv
 
 ## Funktionen
 
-- Maßstäbliche Draufsicht mit Verschieben, 5-cm-Raster und Drehen.
+- Tischbreite und -tiefe von 40 bis 400 cm anpassen, inklusive maßstäblicher Draufsicht, 5-cm-Raster und Drehen.
+- Bei einer Größenänderung behalten Elemente ihre realen Maße und Positionen. Überstände werden gemeldet; die reservierte Arbeitsfläche bleibt innerhalb des Tisches.
+- Tischmaße werden gespeichert und mit exportiert. Ältere Pläne ohne Tischmaße werden mit 180 × 90 cm geöffnet.
 - Eigene Aufbewahrungselemente sowie editierbare Breite, Tiefe, Höhe und getrennte Kapazitäten für Vallejo/Citadel.
 - Bestands- und Kapazitätsvergleich ohne doppeltes Zählen des Kofferinhalts.
 - Hinweise auf Überschneidungen, Überstände und belegte Arbeitsfläche.
@@ -39,7 +41,7 @@ Dein Plan liegt im lokalen Speicher des jeweiligen Browsers. Er wird nicht autom
 npm test
 ```
 
-27 automatisierte Prüfungen decken Kapazitätsberechnung, Geometrie, Positionsänderungen, Drehen, Bearbeiten, Hinzufügen/Entfernen, Persistenz und Import/Export ab. Ereignisbehandlung wird mit einem kleinen DOM-Adapter geprüft; diese Tests ersetzen keine visuelle Browserprüfung.
+39 automatisierte Prüfungen decken Kapazitätsberechnung, Geometrie, Positionsänderungen, Drehen, Bearbeiten, Hinzufügen/Entfernen, Persistenz und Import/Export ab. Ereignisbehandlung wird mit einem kleinen DOM-Adapter geprüft; diese Tests ersetzen keine visuelle Browserprüfung.
 
 ## Dateien
 
@@ -53,4 +55,5 @@ npm test
 | `*.test.mjs` | Automatisierte Prüfungen |
 
 Zum Hosting werden nur `index.html`, `style.css`, `app.mjs` und `core.mjs` benötigt. Private Zugriffsrechte werden vom jeweiligen Hostingdienst durchgesetzt, nicht durch den statischen Quellcode.
+
 
