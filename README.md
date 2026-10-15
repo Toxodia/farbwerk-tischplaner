@@ -1,12 +1,12 @@
 # Farbwerk · Mein Tischplaner
 
-Privater interaktiver Aufbewahrungsplaner für einen **180 × 90 cm Basteltisch**: zwei Vallejo-Koffer, weitere Vallejo-Flaschen und Citadel-Töpfe.
+Interaktiver Aufbewahrungsplaner für einen **180 × 90 cm Basteltisch**: zwei Vallejo-Koffer, weitere Vallejo-Flaschen und Citadel-Töpfe.
 
-**Private Website:** https://farbwerk-tischplaner-m8q2.noisywave.chatgpt.site
+**Direkt im Browser öffnen — ohne Installation:** https://toxodia.github.io/farbwerk-tischplaner/
 
-Dieses Repository enthält den vollständigen Quellcode und die automatisierten Tests. Es benötigt keine externen Bibliotheken und keinen Build-Schritt. Das Repository soll privat bleiben; eine öffentliche GitHub-Pages-Veröffentlichung ist nicht eingerichtet.
+Dieses Repository enthält den vollständigen Quellcode und die automatisierten Tests. Es benötigt keine externen Bibliotheken und keinen Build-Schritt. Repository und GitHub-Pages-Website sind öffentlich. Persönliche Anordnungen bleiben im lokalen Speicher des jeweiligen Browsers.
 
-## Lokal starten
+## Optional lokal starten
 
 Voraussetzung: Node.js ab Version 20.
 
@@ -28,6 +28,8 @@ Mit `Strg+C` wird der lokale Server beendet. Die HTML-Datei bitte über den Serv
 Die voreingestellten Elementmaße und Kapazitäten sind **Beispielwerte**, keine bestätigten Produktdaten. Stellflächen inklusive benötigter Öffnungsfläche nachmessen. Die Dachschräge wird nicht geometrisch geprüft; Höhen selbst abgleichen.
 
 ## Eigene Pläne sichern
+
+Beim Wechsel von der bisherigen Sites-Adresse zu GitHub Pages den Plan zuerst exportieren und auf der neuen Seite importieren. Beide Adressen verwenden getrennten Browserspeicher.
 
 Dein Plan liegt im lokalen Speicher des jeweiligen Browsers. Er wird nicht automatisch mit GitHub, anderen Browsern oder der privaten Website synchronisiert. Über **Plan exportieren** kannst du ihn sichern und auf einem anderen Gerät mit **Plan importieren** laden. Die Quellcodesicherung enthält den Beispielplan, nicht deine nachträglichen Browseränderungen.
 
@@ -51,3 +53,4 @@ npm test
 | `*.test.mjs` | Automatisierte Prüfungen |
 
 Zum Hosting werden nur `index.html`, `style.css`, `app.mjs` und `core.mjs` benötigt. Private Zugriffsrechte werden vom jeweiligen Hostingdienst durchgesetzt, nicht durch den statischen Quellcode.
+
